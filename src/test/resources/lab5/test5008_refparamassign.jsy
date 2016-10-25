@@ -1,0 +1,7 @@
+const f = function(ref x: number): number { x = x + 1; return x }
+
+var y = 5
+console.log(y)
+const z = f(y)
+console.log(y)
+console.log(z)

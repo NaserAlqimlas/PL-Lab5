@@ -1,0 +1,11 @@
+## type Decl(MVar,x,N(1.0),Var(x)) : number
+## step    0:
+##  Map()
+##  Decl(MVar,x,N(1.0),Var(x))
+## step    1:
+##  Map(A(1) -> N(1.0))
+##  Unary(Deref,A(1))
+## result:
+##  Map(A(1) -> N(1.0))
+##  N(1.0)
+1.0

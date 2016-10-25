@@ -1,0 +1,4 @@
+SyntaxError
+test5018_while.jsy:7:30: ``)'' expected but `name' found
+const while = function while(name b: bool): (name body: Undefined) => Undefined  {
+                             ^

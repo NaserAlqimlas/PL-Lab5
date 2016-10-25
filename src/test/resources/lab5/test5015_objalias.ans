@@ -1,0 +1,51 @@
+## type Decl(MConst,obj,Obj(Map(value -> N(15.0))),Binary(Seq,Print(Var(obj)),Decl(MConst,obj2,Var(obj),Binary(Seq,Print(Var(obj2)),Binary(Seq,Assign(GetField(Var(obj2),value),N(295.0)),Binary(Seq,Print(Var(obj)),Binary(Seq,Print(Var(obj2)),GetField(Var(obj),value)))))))) : number
+## step    0:
+##  Map()
+##  Decl(MConst,obj,Obj(Map(value -> N(15.0))),Binary(Seq,Print(Var(obj)),Decl(MConst,obj2,Var(obj),Binary(Seq,Print(Var(obj2)),Binary(Seq,Assign(GetField(Var(obj2),value),N(295.0)),Binary(Seq,Print(Var(obj)),Binary(Seq,Print(Var(obj2)),GetField(Var(obj),value))))))))
+## step    1:
+##  Map(A(1) -> Obj(Map(value -> N(15.0))))
+##  Decl(MConst,obj,A(1),Binary(Seq,Print(Var(obj)),Decl(MConst,obj2,Var(obj),Binary(Seq,Print(Var(obj2)),Binary(Seq,Assign(GetField(Var(obj2),value),N(295.0)),Binary(Seq,Print(Var(obj)),Binary(Seq,Print(Var(obj2)),GetField(Var(obj),value))))))))
+## step    2:
+##  Map(A(1) -> Obj(Map(value -> N(15.0))))
+##  Binary(Seq,Print(A(1)),Decl(MConst,obj2,A(1),Binary(Seq,Print(Var(obj2)),Binary(Seq,Assign(GetField(Var(obj2),value),N(295.0)),Binary(Seq,Print(A(1)),Binary(Seq,Print(Var(obj2)),GetField(A(1),value)))))))
+{ value: 15.0 }
+## step    3:
+##  Map(A(1) -> Obj(Map(value -> N(15.0))))
+##  Binary(Seq,Undefined,Decl(MConst,obj2,A(1),Binary(Seq,Print(Var(obj2)),Binary(Seq,Assign(GetField(Var(obj2),value),N(295.0)),Binary(Seq,Print(A(1)),Binary(Seq,Print(Var(obj2)),GetField(A(1),value)))))))
+## step    4:
+##  Map(A(1) -> Obj(Map(value -> N(15.0))))
+##  Decl(MConst,obj2,A(1),Binary(Seq,Print(Var(obj2)),Binary(Seq,Assign(GetField(Var(obj2),value),N(295.0)),Binary(Seq,Print(A(1)),Binary(Seq,Print(Var(obj2)),GetField(A(1),value))))))
+## step    5:
+##  Map(A(1) -> Obj(Map(value -> N(15.0))))
+##  Binary(Seq,Print(A(1)),Binary(Seq,Assign(GetField(A(1),value),N(295.0)),Binary(Seq,Print(A(1)),Binary(Seq,Print(A(1)),GetField(A(1),value)))))
+{ value: 15.0 }
+## step    6:
+##  Map(A(1) -> Obj(Map(value -> N(15.0))))
+##  Binary(Seq,Undefined,Binary(Seq,Assign(GetField(A(1),value),N(295.0)),Binary(Seq,Print(A(1)),Binary(Seq,Print(A(1)),GetField(A(1),value)))))
+## step    7:
+##  Map(A(1) -> Obj(Map(value -> N(15.0))))
+##  Binary(Seq,Assign(GetField(A(1),value),N(295.0)),Binary(Seq,Print(A(1)),Binary(Seq,Print(A(1)),GetField(A(1),value))))
+## step    8:
+##  Map(A(1) -> Obj(Map(value -> N(295.0))))
+##  Binary(Seq,N(295.0),Binary(Seq,Print(A(1)),Binary(Seq,Print(A(1)),GetField(A(1),value))))
+## step    9:
+##  Map(A(1) -> Obj(Map(value -> N(295.0))))
+##  Binary(Seq,Print(A(1)),Binary(Seq,Print(A(1)),GetField(A(1),value)))
+{ value: 295.0 }
+## step   10:
+##  Map(A(1) -> Obj(Map(value -> N(295.0))))
+##  Binary(Seq,Undefined,Binary(Seq,Print(A(1)),GetField(A(1),value)))
+## step   11:
+##  Map(A(1) -> Obj(Map(value -> N(295.0))))
+##  Binary(Seq,Print(A(1)),GetField(A(1),value))
+{ value: 295.0 }
+## step   12:
+##  Map(A(1) -> Obj(Map(value -> N(295.0))))
+##  Binary(Seq,Undefined,GetField(A(1),value))
+## step   13:
+##  Map(A(1) -> Obj(Map(value -> N(295.0))))
+##  GetField(A(1),value)
+## result:
+##  Map(A(1) -> Obj(Map(value -> N(295.0))))
+##  N(295.0)
+295.0

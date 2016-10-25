@@ -1,0 +1,29 @@
+## type Decl(MVar,x,N(2.0),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(2.0))),Decl(MConst,y,Binary(Plus,Var(x),N(2.0)),Undefined))) : Undefined
+## step    0:
+##  Map()
+##  Decl(MVar,x,N(2.0),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(2.0))),Decl(MConst,y,Binary(Plus,Var(x),N(2.0)),Undefined)))
+## step    1:
+##  Map(A(1) -> N(2.0))
+##  Binary(Seq,Assign(Unary(Deref,A(1)),Binary(Plus,Unary(Deref,A(1)),N(2.0))),Decl(MConst,y,Binary(Plus,Unary(Deref,A(1)),N(2.0)),Undefined))
+## step    2:
+##  Map(A(1) -> N(2.0))
+##  Binary(Seq,Assign(Unary(Deref,A(1)),Binary(Plus,N(2.0),N(2.0))),Decl(MConst,y,Binary(Plus,Unary(Deref,A(1)),N(2.0)),Undefined))
+## step    3:
+##  Map(A(1) -> N(2.0))
+##  Binary(Seq,Assign(Unary(Deref,A(1)),N(4.0)),Decl(MConst,y,Binary(Plus,Unary(Deref,A(1)),N(2.0)),Undefined))
+## step    4:
+##  Map(A(1) -> N(4.0))
+##  Binary(Seq,N(4.0),Decl(MConst,y,Binary(Plus,Unary(Deref,A(1)),N(2.0)),Undefined))
+## step    5:
+##  Map(A(1) -> N(4.0))
+##  Decl(MConst,y,Binary(Plus,Unary(Deref,A(1)),N(2.0)),Undefined)
+## step    6:
+##  Map(A(1) -> N(4.0))
+##  Decl(MConst,y,Binary(Plus,N(4.0),N(2.0)),Undefined)
+## step    7:
+##  Map(A(1) -> N(4.0))
+##  Decl(MConst,y,N(6.0),Undefined)
+## result:
+##  Map(A(1) -> N(4.0))
+##  Undefined
+undefined

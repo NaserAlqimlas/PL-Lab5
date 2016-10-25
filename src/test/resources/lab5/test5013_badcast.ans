@@ -1,0 +1,2 @@
+StaticTypeError
+test5013_badcast.jsy:2:24: invalid type { f: {  }; g: number } for sub-expression Var(x) in Unary(Cast(TObj(Map(f -> TObj(Map(h -> TNumber))))),Var(x))

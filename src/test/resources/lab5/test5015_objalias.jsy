@@ -1,0 +1,8 @@
+const obj = { value: 15 }
+console.log(obj)
+const obj2 = obj
+console.log(obj2)
+obj2.value = 295
+console.log(obj)
+console.log(obj2)
+obj.value
