@@ -222,7 +222,7 @@ def rename(env: Map[String, String], e: Expr)(i: Int): (Int,Expr) = e match {
   case Decl(MConst, x, e1, e2) =>
     val (ip, xp) = fresh(i)
     val (ipp, e1p) = rename(env, e1)(ip)
-    val (ippp, e2p) = rename(env, e2)(ipp)
+    val (ippp, e2p) = rename(env + (x -> xp), e2)(ipp)
     (ippp, Decl(MConst, xp, e1p, e2p))
   case _ => ???
 }
