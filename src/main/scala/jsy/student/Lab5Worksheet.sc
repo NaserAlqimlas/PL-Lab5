@@ -24,21 +24,12 @@ parse("<Null>null")
 parse("<{f: number}>null")
 
 // Parse functions
-parse("function (x: number) { return x }")
-parse("function (var x: number) { x = 0; return x }")
-parse("var y = 1; (function (ref x: number) { x = 0; return x })(y)")
-parse("(function (name x: number) { return 0 })(console.log(100))")
+parse("(x: number) => x")
+parse("function (x: var number) { x = 0; return x }")
+parse("var y = 1; (function (x: ref number) { x = 0; return x })(y)")
+parse("((x: name number) => 0)(console.log(100))")
 
-// DoWith exercise: Rename
-val e1 = parse("const a = 1; a")
-val e1p = parse("const x1 = 1; x1")
-val e2 = parse("const a = 2; a")
-val e2p = parse("const x2 = 2; x2")
-val e = Decl(MConst, "a", e1, e2)
-val ep = Decl(MConst, "x0", e1p, e2p)
-//assert(rename(e) == ep) // uncomment when you are ready to test your rename function.
-
-// Aliasing example from handout
+// Aliasing example
 val aliasingex = parse("""
   const x = { f: 1 }
   const y = x
