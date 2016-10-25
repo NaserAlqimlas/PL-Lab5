@@ -245,12 +245,6 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
     }
   }
 
-  /* This should be the same code as from Lab 3 */
-  def iterate(e0: Expr)(next: (Expr, Int) => Option[Expr]): Expr = {
-    def loop(e: Expr, n: Int): Expr = ???
-    loop(e0, 0)
-  }
-
   /* Capture-avoiding substitution in e replacing variables x with esub. */
   def substitute(e: Expr, esub: Expr, x: String): Expr = {
     def subst(e: Expr): Expr = e match {

@@ -31,7 +31,6 @@ trait Lab5Like { a: JsyApplication =>
 
   /* Step */
   def inequalityVal(bop: Bop, v1: Expr, v2: Expr): Boolean
-  def iterate(e0: Expr)(body: (Expr, Int) => Option[Expr]): Expr
   def substitute(e: Expr, v: Expr, x: String): Expr
   def isRedex(mode: Mode, e: Expr): Boolean
   def getBinding(mode: Mode, e: Expr): DoWith[Mem,Expr]
