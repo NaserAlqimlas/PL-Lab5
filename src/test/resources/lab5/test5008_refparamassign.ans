@@ -1,4 +1,56 @@
-SyntaxError
-test5008_refparamassign.jsy:1:20: ``)'' expected but `ref' found
-const f = function(ref x: number): number { x = x + 1; return x }
-                   ^
+## type Decl(MConst,f,Function(None,List((x,MTyp(MRef,TNumber))),Some(TNumber),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(1.0))),Var(x))),Decl(MVar,y,N(5.0),Binary(Seq,Print(Var(y)),Decl(MConst,z,Call(Var(f),List(Var(y))),Binary(Seq,Print(Var(y)),Print(Var(z))))))) : Undefined
+## step    0:
+##  Map()
+##  Decl(MConst,f,Function(None,List((x,MTyp(MRef,TNumber))),Some(TNumber),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(1.0))),Var(x))),Decl(MVar,y,N(5.0),Binary(Seq,Print(Var(y)),Decl(MConst,z,Call(Var(f),List(Var(y))),Binary(Seq,Print(Var(y)),Print(Var(z)))))))
+## step    1:
+##  Map()
+##  Decl(MVar,y,N(5.0),Binary(Seq,Print(Var(y)),Decl(MConst,z,Call(Function(None,List((x,MTyp(MRef,TNumber))),Some(TNumber),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(1.0))),Var(x))),List(Var(y))),Binary(Seq,Print(Var(y)),Print(Var(z))))))
+## step    2:
+##  Map(A(1) -> N(5.0))
+##  Binary(Seq,Print(Unary(Deref,A(1))),Decl(MConst,z,Call(Function(None,List((x,MTyp(MRef,TNumber))),Some(TNumber),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(1.0))),Var(x))),List(Unary(Deref,A(1)))),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z)))))
+## step    3:
+##  Map(A(1) -> N(5.0))
+##  Binary(Seq,Print(N(5.0)),Decl(MConst,z,Call(Function(None,List((x,MTyp(MRef,TNumber))),Some(TNumber),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(1.0))),Var(x))),List(Unary(Deref,A(1)))),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z)))))
+5.0
+## step    4:
+##  Map(A(1) -> N(5.0))
+##  Binary(Seq,Undefined,Decl(MConst,z,Call(Function(None,List((x,MTyp(MRef,TNumber))),Some(TNumber),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(1.0))),Var(x))),List(Unary(Deref,A(1)))),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z)))))
+## step    5:
+##  Map(A(1) -> N(5.0))
+##  Decl(MConst,z,Call(Function(None,List((x,MTyp(MRef,TNumber))),Some(TNumber),Binary(Seq,Assign(Var(x),Binary(Plus,Var(x),N(1.0))),Var(x))),List(Unary(Deref,A(1)))),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z))))
+## step    6:
+##  Map(A(1) -> N(5.0))
+##  Decl(MConst,z,Binary(Seq,Assign(Unary(Deref,A(1)),Binary(Plus,Unary(Deref,A(1)),N(1.0))),Unary(Deref,A(1))),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z))))
+## step    7:
+##  Map(A(1) -> N(5.0))
+##  Decl(MConst,z,Binary(Seq,Assign(Unary(Deref,A(1)),Binary(Plus,N(5.0),N(1.0))),Unary(Deref,A(1))),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z))))
+## step    8:
+##  Map(A(1) -> N(5.0))
+##  Decl(MConst,z,Binary(Seq,Assign(Unary(Deref,A(1)),N(6.0)),Unary(Deref,A(1))),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z))))
+## step    9:
+##  Map(A(1) -> N(6.0))
+##  Decl(MConst,z,Binary(Seq,N(6.0),Unary(Deref,A(1))),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z))))
+## step   10:
+##  Map(A(1) -> N(6.0))
+##  Decl(MConst,z,Unary(Deref,A(1)),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z))))
+## step   11:
+##  Map(A(1) -> N(6.0))
+##  Decl(MConst,z,N(6.0),Binary(Seq,Print(Unary(Deref,A(1))),Print(Var(z))))
+## step   12:
+##  Map(A(1) -> N(6.0))
+##  Binary(Seq,Print(Unary(Deref,A(1))),Print(N(6.0)))
+## step   13:
+##  Map(A(1) -> N(6.0))
+##  Binary(Seq,Print(N(6.0)),Print(N(6.0)))
+6.0
+## step   14:
+##  Map(A(1) -> N(6.0))
+##  Binary(Seq,Undefined,Print(N(6.0)))
+## step   15:
+##  Map(A(1) -> N(6.0))
+##  Print(N(6.0))
+6.0
+## result:
+##  Map(A(1) -> N(6.0))
+##  Undefined
+undefined

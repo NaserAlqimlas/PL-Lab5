@@ -4,8 +4,8 @@
  * close to a custom statement.  For example, we define a
  *  'while' loop below.
  */
-const while = function while(name b: bool): (name body: Undefined) => Undefined  {
-  return (name body: Undefined) => !b ? undefined : (body, while(b)(body))
+const while = function while(b: name bool): (body: name Undefined) => Undefined  {
+  return (body: name Undefined) => !b ? undefined : (body, while(b)(body))
 }
 
 {
@@ -14,6 +14,6 @@ const while = function while(name b: bool): (name body: Undefined) => Undefined 
     console.log(i);
     i = i + 1;
     undefined
-  }}) 
+  }})
   i
 }
