@@ -1,0 +1,50 @@
+/* Call-By-Name:
+ *
+ * With call-by-name, we can write a function that looks very
+ * close to a custom statement.  For example, we define a
+ *  'while' loop below.
+ */
+const while = function while(b: name bool): (body: name Undefined) => Undefined  {
+  return (body: name Undefined) => !b ? undefined : (body, while(b)(body))
+}
+
+/* Imperative Linked-Lists */
+
+interface Listy { h: number; t: Listy }
+const hd = function(l: Listy) {
+  return (<{ h: number; t: Listy }>l).h
+}
+const tl = function(l: Listy) {
+  return (<{ h: number; t: Listy }>l).t
+}
+
+const Nil = <Listy>null;
+const Cons = function(h: number, t: Listy): Listy {
+  return <Listy>{ h: h, t: t }
+}
+
+const Listy = {
+  printy: function(c: var Listy): Undefined {
+    while (c !== Nil) ({{
+      console.log(hd(c));
+      c = tl(c);
+      undefined;
+    }})
+    return undefined
+  }
+}
+
+const l0 = Cons(1, Cons(2, Cons(3, Nil)))
+
+{
+  Listy.printy(l0);
+
+  var c = l0;
+  while (c !== Nil) ({{
+    (<{h: number}>c).h = hd(c) * hd(c);
+    c = tl(c);
+    undefined;
+  }});
+
+  Listy.printy(l0);
+}
