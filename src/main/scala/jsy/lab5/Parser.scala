@@ -225,7 +225,7 @@ object Parser extends TokenParser {
         val body = stmts(Some(ret))
         Function(f, params, retty, body)
     } |
-    ("(" ~> rep(colonpair(modety)) <~ ")") ~ (withpos("=>" ~> noseq)) ^^ {
+    ("(" ~> repsep(colonpair(modety), ",") <~ ")") ~ (withpos("=>" ~> noseq)) ^^ {
       case params ~ ((pos, body)) => Function(None, params, None, body) setPos pos
     }
     
