@@ -74,12 +74,20 @@ trait Lab5Like { a: JsyApplication =>
       if (Some(n) == maxSteps) throw TerminationError(e, n)
       else if (isValue(e)) doreturn( e )
       else {
+        doget[Mem] flatMap { m =>
+          println("## step %4d:%n##  %s%n##  %s".format(n, m, e))
+          step(e) flatMap { ep => loop(ep, n + 1) }
+        }
+        /* The following commented-out code is the same as the above but using Scala's
+        for-yield syntax for calls to flatMap:
+
         for {
           m <- doget[Mem]
           _ = println("## step %4d:%n##  %s%n##  %s".format(n, m, e))
           ep <- step(e)
           epp <- loop(ep, n + 1)
         } yield epp
+        */
       }
     val (m,v) = loop(e, 0)(memempty)
     println("## result:%n##  %s%n##  %s".format(m, v))
