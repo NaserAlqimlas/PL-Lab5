@@ -41,38 +41,45 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
       case N(_) | B(_) | Undefined | S(_) | Null | A(_) => doreturn(e)
       case Print(e1) => ren(env,e1) map { e1p => Print(e1p) }
 
-      case Unary(uop, e1) => ???
-      case Binary(bop, e1, e2) => ???
-      case If(e1, e2, e3) => ???
+      case Unary(uop, e1) => ren(env, e1) map { e1p => Unary(uop, e1p)}
+      case Binary(bop, e1, e2) => ren(env, e1) flatMap { e1p => ren(env, e2) map { e2p => Binary(bop, e1p, e2p)}}
+      case If(e1, e2, e3) => ren(env, e1) flatMap{ e1p => ren(env, e2) flatMap {e2p => ren(env,e3 ) map {e3p => If(e1p, e2p, e3p)}}}
 
-      case Var(x) => ???
+      case Var(x) => env.get(x) match {
+        case Some(xi) => doreturn(Var(xi))
+        case None => doreturn(Var(x))
+      }
 
       case Decl(m, x, e1, e2) => fresh(x) flatMap { xp =>
-        ???
+        ren(env,e1) flatMap { e1p => ren(env + (x -> xp), e2) map {e2p => Decl(m, xp, e1p, e2p)}}
       }
 
       case Function(p, params, retty, e1) => {
         val w: DoWith[W,(Option[String], Map[String,String])] = p match {
-          case None => ???
-          case Some(x) => ???
+          case None => doreturn(None, env)
+          case Some(x) => fresh(x) map ( pp => (Some(pp), env + (x -> pp)))
         }
+
         w flatMap { case (pp, envp) =>
           params.foldRight[DoWith[W,(List[(String,MTyp)],Map[String,String])]]( doreturn((Nil, envp)) ) {
-            case ((x,mty), acc) => acc flatMap {
-              ???
-            }
+            case ((x,mty), acc) => fresh(x) flatMap { xp => acc map { case ( t, env) => ((xp, mty)::t, env + ( x -> xp))}}
           } flatMap {
-            ???
+            case (x_mtyp, envp) => ren(envp, e1)
           }
         }
       }
 
-      case Call(e1, args) => ???
+      case Call(e1, args) => {
+        ren(env, e1) flatMap { e1p => mapWith(args)({  ei => ren(env, ei) }) map { argsp => Call(e1p, argsp) }
+        }
+      }
 
-      case Obj(fields) => ???
-      case GetField(e1, f) => ???
+      case Obj(fields) => mapWith(fields)({
+        case  ((fi , ei)) => ren(env, ei) map { eir => (( fi, eir))}
+      }) map { mp => Obj(mp)}
+      case GetField(e1, f) => ren(env, e1) map {e1R => GetField(e1R, f) }
 
-      case Assign(e1, e2) => ???
+      case Assign(e1, e2) => ren(env, e1) flatMap { e1R => ren(env, e2)  map {e2R => Assign(e1R,e2R) }}
 
       /* Should not match: should have been removed */
       case InterfaceDecl(_, _, _) => throw new IllegalArgumentException("Gremlins: Encountered unexpected expression %s.".format(e))
@@ -82,11 +89,18 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
 
   def myuniquify(e: Expr): Expr = {
     val fresh: String => DoWith[Int,String] = { _ =>
-      ???
+
+      doget flatMap  { w => doput(w + 1) map { _ => "x" + (w).toString }}    //do get the 'w'
+
     }
-    val (_, r) = rename(empty, e)(fresh)(???)
+    val (_, r) = rename(empty, e)(fresh)(0)
     r
   }
+
+
+
+  ////////////STOP - no work done yet beyond here ////////////
+
 
   /*** Helper: mapFirst to DoWith ***/
 
