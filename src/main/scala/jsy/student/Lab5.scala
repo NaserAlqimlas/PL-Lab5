@@ -282,10 +282,26 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
     require(isValue(v1), s"inequalityVal: v1 ${v1} is not a value")
     require(isValue(v2), s"inequalityVal: v2 ${v2} is not a value")
     require(bop == Lt || bop == Le || bop == Gt || bop == Ge)
-    (v1, v2) match {
-      case _ => ???
+
+    ((v1, v2): @unchecked) match {
+        case (S(s1), S(s2))=>
+          (bop: @unchecked) match {
+            case Lt => s1 < s2
+            case Le => s1 <= s2
+            case Gt => s1 > s2
+            case Ge => s1 >= s2
+          }
+        case (N(n1), N(n2)) =>
+          (bop: @unchecked) match {
+            case Lt => n1 < n2
+            case Le => n1 <= n2
+            case Gt => n1 > n2
+            case Ge => n1 >= n2
+          }
+
+      }
     }
-  }
+
 
   /* Capture-avoiding substitution in e replacing variables x with esub. */
   def substitute(e: Expr, esub: Expr, x: String): Expr = {
@@ -293,10 +309,10 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
       case N(_) | B(_) | Undefined | S(_) | Null | A(_) => e
       case Print(e1) => Print(subst(e1))
         /***** Cases from Lab 3 */
-      case Unary(uop, e1) => ???
-      case Binary(bop, e1, e2) => ???
-      case If(e1, e2, e3) => ???
-      case Var(y) => ???
+      case Unary(uop, e1) => Unary(uop, subst(e1))
+      case Binary(bop, e1, e2) => Binary(bop, subst(e1), subst(e2))
+      case If(e1, e2, e3) => If(subst(e1), subst(e2), subst(e3))
+      case Var(y) => if(x==y) esub else e
         /***** Cases need a small adaption from Lab 3 */
       case Decl(mut, y, e1, e2) => Decl(mut, y, subst(e1), if (x == y) e2 else subst(e2))
         /***** Cases needing adapting from Lab 4 */
