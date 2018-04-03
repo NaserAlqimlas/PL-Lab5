@@ -99,29 +99,48 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
 
 
 
-  ////////////STOP - no work done yet beyond here ////////////
 
 
   /*** Helper: mapFirst to DoWith ***/
 
   // List map with an operator returning a DoWith
   def mapWith[W,A,B](l: List[A])(f: A => DoWith[W,B]): DoWith[W,List[B]] = {
-    l.foldRight[DoWith[W,List[B]]]( ??? ) {
-      ???
+    l.foldRight[DoWith[W, List[B]]](doreturn(Nil)) { case (a, dw_w_lb) => {
+      val dw_w_b = f(a)
+      val dw_w_lb_p = dw_w_lb flatMap { lb => dw_w_b map { b => b :: lb } }
+      dw_w_lb_p
     }
-  }
+    }
+  }      //Op returns DoWith (W,B) in a list
+
 
   // Map map with an operator returning a DoWith
   def mapWith[W,A,B,C,D](m: Map[A,B])(f: ((A,B)) => DoWith[W,(C,D)]): DoWith[W,Map[C,D]] = {
-    m.foldRight[DoWith[W,Map[C,D]]]( ??? ) {
-      ???
+    m.foldRight[DoWith[W,Map[C,D]]]( doreturn(Map.empty)) {
+      case((a,b), dw_w_mcd) => {
+        val dw_w_cd:DoWith[W,(C,D)] = f((a,b))
+        val dw_w_mcdp = dw_w_mcd flatMap { mcd:Map[C,D] => dw_w_cd map { case((c, d)) => mcd + (c->d)  }
+
+        }
+        dw_w_mcdp
+      }
     }
-  }
+  }         //Op returns DoWith in form of a Map
+
 
   // Just like mapFirst from Lab 4 but uses a callback f that returns a DoWith in the Some case.
   def mapFirstWith[W,A](l: List[A])(f: A => Option[DoWith[W,A]]): DoWith[W,List[A]] = l match {
-    case Nil => ???
-    case h :: t => ???
+    case Nil => doreturn(l)
+    case h :: t => f(h) match {
+      case None => {
+        mapFirstWith(t)(f) map { tail => h::tail}
+      }
+      case Some(dw_h) => {
+        dw_h map { newh => newh::t }
+      }
+    }
+
+    // Utilizing callback for returning a DoWith     **REVIEW****  \/\/\/
   }
 
   // There are better ways to deal with the combination of data structures like List, Map, and
@@ -130,14 +149,19 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
   /*** Casting ***/
 
   def castOk(t1: Typ, t2: Typ): Boolean = (t1, t2) match {
-      /***** Make sure to replace the case _ => ???. */
+    /***** Make sure to replace the case _ => ???. */
     //case _ => ???
-      /***** Cases for the extra credit. Do not attempt until the rest of the assignment is complete. */
+    case (TNull, t2 ) => true
+    case (t1, t2) if t1 == t2 => true
+    case (TObj(tfields), TNull) => true
+    /***** Cases for the extra credit. Do not attempt until the rest of the assignment is complete. */
     case (TInterface(tvar, t1p), _) => ???
-    case (_, TInterface(tvar, t2p)) => ???
-      /***** Otherwise, false. */
+    case (_, TInterface(tvar, t2p)) => ???      //Not attempted yet! As of Apr3
+    /***** Otherwise, false. */
     case _ => false
   }
+  //replaced, using case
+
 
   /*** Type Inference ***/
 
@@ -148,9 +172,13 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
     case TFunction(_, _) => true
     case TObj(fields) if (fields exists { case (_, t) => hasFunctionTyp(t) }) => true
     case _ => false
-  }
+  }  //All set
 
-  def isBindex(m: Mode, e: Expr): Boolean = ???
+  def isBindex(m: Mode, e: Expr): Boolean = m match{
+    case MRef if isLExpr(e)=> true
+    case MVar | MConst | MName => true
+    case _ => false
+  }  //All set
 
   def typeof(env: TEnv, e: Expr): Typ = {
     def err[T](tgot: Typ, e1: Expr): T = throw StaticTypeError(tgot, e1, e)
