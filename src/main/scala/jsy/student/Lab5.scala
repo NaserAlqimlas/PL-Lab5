@@ -398,8 +398,8 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
     require(!isRedex(mode,e), s"expression ${e} must not reducible under mode ${mode}")
      mode match {
        case MConst | MName => doreturn(e)
-       case MRef => ???
-       case MVar => ???
+       case MRef if isLValue(e) =>  doreturn(e) //make sure its a location value
+       case MVar => memalloc(e) map {x => Unary(Deref, x)} //alloc mem and then return unary deref
      }         //based on mode, do something const or name -> var or ptr ref, Mconst or Mname,
                 // creates the binding, Var-> alloc mem then doreturn, Mref -> expr given is location val, Mconst or Mname doesn't really matter
   }
@@ -411,10 +411,10 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
       /* Base Cases: Do Rules */
       case Print(v1) if isValue(v1) => doget map { m => println(pretty(m, v1)); Undefined }
         /***** Cases needing adapting from Lab 3. */
-      case Unary(Neg, v1) if isValue(v1) => ??? //doreturn(N(-v1))
-      case Unary(Not, B(b1)) => doreturn (B(!b1))
-      case Binary(bop @ (Lt|Le|Gt|Ge), v1, v2) if isValue(v1) && isValue(v2) => doreturn(B(inequalityVal(bop, v1, v2)))
-      case Binary(Seq, v1, e2) if isValue(v1) => doreturn(e2)
+      case Unary(Neg, N(v1)) => doget map {_=> N(-v1)}
+      case Unary(Not, B(b1)) => doget map {_ => B(!b1)}
+      case Binary(bop @ (Lt|Le|Gt|Ge), v1, v2) if isValue(v1) && isValue(v2) => doget map {_ => B(inequalityVal(bop, v1, v2))}
+      case Binary(Seq, v1, e2) if isValue(v1) => doget map {_=> e2}
       case Binary(Plus, S(s1), S(s2)) => doreturn(S(s1+s1))
       case Binary(Plus, N(n1), N(n2)) => doreturn(N(n1+n2))
       case Binary(Minus, N(n1), N(n2)) => doreturn(N(n1-n2))
@@ -438,17 +438,30 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
 
       case Decl(MConst, x, v1, e2) if isValue(v1) =>
         doreturn(substitute(e2, v1, x))
-      case Decl(MVar, x, v1, e2) if isValue(v1) =>
-        ???
+      case Decl(MVar, x, v1, e2) if isValue(v1) => {
+        getBinding(MVar, v1) map {e1p => substitute(e2, e1p, x)}
+
+      }
         /***** New cases for Lab 5. */
       case Unary(Deref, a @ A(_)) =>
-        ???
+        doget map {
+          mp => mp.get(a)  match {
+            case None => throw StuckError(e)
+            case Some(s) => s
+          }
+        }
 
       case Assign(Unary(Deref, a @ A(_)), v) if isValue(v) =>
-        domodify[Mem] { m => m + (a -> v) } map { _ => v }      /** Check this **/
+        domodify[Mem] { m => m.+(a->v) } map { _ => v }      //extend the state with a->v
 
       case Assign(GetField(a @ A(_), f), v) if isValue(v) =>
-        ???
+        // assign new field in object to be a new value
+        //a point to new field and return value v'
+        domodify[Mem] { m => m.get(a) match {
+          case Some(Obj(fields)) => m.+(a -> Obj(fields.updated(f, v)))
+          case _ => throw StuckError(e)
+          }
+        } map {_ => v}    //m.get gets value of a in the memory and returns option expression
 
       case Call(v @ Function(p, params, _, e), args) => {
         val pazip = params zip args
@@ -487,15 +500,15 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
       }
 
       case Decl(mode, x, e1, e2) =>
-        ???
+        ??? //check if e1 is reducable, if it is then step on e1, return new e1
       case Call(e1, args) =>
-        ???
+        step(e1) map {e1p => Call(e1p, args)}//step on e1
 
         /***** New cases for Lab 5.  */
-      case Assign(e1, e2) if ??? =>
-        ???
+      case Assign(e1, e2) if !isLValue(e1) =>
+        step(e1) map {e1p => Assign(e1p, e2)}
       case Assign(e1, e2) =>
-        ???
+        step(e2) map {e2p => Assign(e1, e2p)}
 
       /* Everything else is a stuck error. */
       case _ => throw StuckError(e)
