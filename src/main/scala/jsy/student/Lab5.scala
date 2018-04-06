@@ -317,7 +317,8 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
   ///set
 
 
-  //////Naser//////
+  //////Nasar//////
+
 
   /*** Small-Step Interpreter ***/
 
@@ -350,26 +351,28 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
           case Ge => n1 >= n2
         }
     }
-  }
+  }     //Nasar^^^
 
   /* Capture-avoiding substitution in e replacing variables x with esub. */
   def substitute(e: Expr, esub: Expr, x: String): Expr = {
     def subst(e: Expr): Expr = e match {
       case N(_) | B(_) | Undefined | S(_) | Null | A(_) => e
       case Print(e1) => Print(subst(e1))
-        /***** Cases from Lab 3 */
+      /***** Cases from Lab 3 */
       case Unary(uop, e1) => Unary(uop, subst(e1))
       case Binary(bop, e1, e2) => Binary(bop, subst(e1), subst(e2))
       case If(e1, e2, e3) => If(subst(e1), subst(e2), subst(e3))
-      case Var(y) => if(x==y) esub else e
-        /***** Cases need a small adaption from Lab 3 */
+      case Var(y) => if( y == x ) esub else e
+      /***** Cases need a small adaption from Lab 3 */
       case Decl(mut, y, e1, e2) => Decl(mut, y, subst(e1), if (x == y) e2 else subst(e2))
-        /***** Cases needing adapting from Lab 4 */
-      case Function(p, paramse, retty, e1) =>
-        if (p == Some(x) || (paramse exists { case (y,_) => x == y })) e else Function(p, paramse, retty, subst(e1))
-        /***** Cases directly from Lab 4 */
-      case Call(e1, args) => Call(subst(e1), args map subst)
-      case Obj(fields) => Obj(fields map { case (f,e) => (f, subst(e)) })
+      /***** Cases needing adapting from Lab 4 */
+      case Function(p, paramse, retty, e1) => p match {
+        case None => if( !paramse.exists{ case( xi, _) => { (xi == x)}} ) Function(p,paramse, retty, subst(e1)) else e
+        case Some(name) => if ( (name != x) && (!paramse.exists{ case( xi, _) => { (xi == x)}} )) Function(p,paramse, retty, subst(e1)) else e
+      }
+      /***** Cases directly from Lab 4 */
+      case Call(e1, args) => Call(subst(e1), args.map (subst))
+      case Obj(fields) => Obj(fields.mapValues{ case ei => subst(ei)})
       case GetField(e1, f) => GetField(subst(e1), f)
       /***** New case for Lab 5 */
       case Assign(e1, e2) => Assign(subst(e1), subst(e2))
@@ -381,28 +384,31 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
     def myrename(e: Expr): Expr = {
       val fvs = freeVars(esub)
       def fresh(x: String): String = if (fvs contains x) fresh(x + "$") else x
-      rename[Unit](e)(doreturn(null)){ x => doreturn(fresh(x)) }
+      rename[Unit](e)(()){ x => doreturn(fresh(x)) }
     }
 
     subst(myrename(e))
   }
 
+  //set ^^^  ***REVIEW!!!****
+
   /* Check whether or not an expression is reduced enough to be applied given a mode. */
-  def isRedex(mode: Mode, e: Expr): Boolean =  mode match {
-    // true if reduceable and false if not reduceable
+  def isRedex(mode: Mode, e: Expr): Boolean = mode match {
     case MConst => !isValue(e)
     case MName => false
+    case MRef => !isLValue(e)
+    case MVar => !isValue(e)
   }
 
   def getBinding(mode: Mode, e: Expr): DoWith[Mem,Expr] = {
     require(!isRedex(mode,e), s"expression ${e} must not reducible under mode ${mode}")
-     mode match {
-       case MConst | MName => doreturn(e)
-       case MRef if isLValue(e) =>  doreturn(e) //make sure its a location value
-       case MVar => memalloc(e) map {x => Unary(Deref, x)} //alloc mem and then return unary deref
-     }         //based on mode, do something const or name -> var or ptr ref, Mconst or Mname,
-                // creates the binding, Var-> alloc mem then doreturn, Mref -> expr given is location val, Mconst or Mname doesn't really matter
+    mode match {
+      case MVar  =>  memalloc(e) map { a => Unary(Deref,a) }
+      case _ => doreturn(e)
+    }
   }
+
+  //set ^^^
 
   /* A small-step transition. */
   def step(e: Expr): DoWith[Mem, Expr] = {
@@ -410,110 +416,140 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
     e match {
       /* Base Cases: Do Rules */
       case Print(v1) if isValue(v1) => doget map { m => println(pretty(m, v1)); Undefined }
-        /***** Cases needing adapting from Lab 3. */
-      case Unary(Neg, N(v1)) => doget map {_=> N(-v1)}
-      case Unary(Not, B(b1)) => doget map {_ => B(!b1)}
-      case Binary(bop @ (Lt|Le|Gt|Ge), v1, v2) if isValue(v1) && isValue(v2) => doget map {_ => B(inequalityVal(bop, v1, v2))}
-      case Binary(Seq, v1, e2) if isValue(v1) => doget map {_=> e2}
-      case Binary(Plus, S(s1), S(s2)) => doreturn(S(s1+s1))
-      case Binary(Plus, N(n1), N(n2)) => doreturn(N(n1+n2))
-      case Binary(Minus, N(n1), N(n2)) => doreturn(N(n1-n2))
-      case Binary(Times, N(n1), N(n2)) => doreturn(N(n1*n2))
-      case Binary(Div, N(n1), N(n2)) => doreturn(N(n1/n2))
-      case Binary(Eq, v1, v2) if isValue(v1) && isValue(v2) => doreturn(B(v1 == v2))
-      case Binary(Ne, v1, v2) if isValue(v1) && isValue(v2) => doreturn(B(v1 != v2))
-      case Binary(And, B(b1), e2) => doreturn(if (b1) e2 else B(false))
-      case Binary(Or, B(b1), e2) => doreturn(if (b1) B(true) else B(false))
-      case If(B(true), e2, e3) => doreturn(e2)
-      case If(B(false), e2, e3) => doreturn(e3)
-        /***** Cases needing adapting from Lab 4. */
-      case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) =>
-        ???
-      case GetField(a @ A(_), f) => doget map {
-        (m: Mem) => m.get(a) match {
-          case Some(Obj(fields)) if fields.contains(f) => fields(f)
-          case _ => throw StuckError(e)
-        }
+      /***** Cases needing adapting from Lab 3. */
+      case Unary(Neg, N(n))  =>  doreturn(N(-n))                                        //do
+      case Unary(Neg, e1) if !isValue(e1) => step(e1) map { e1p => Unary(Neg,e1p)}      //search
+      case Unary(Not, B(b)) => doreturn(B(!b))                                          //do
+      case Unary(Not, e1) if !isValue(e1) => step(e1) map { e1p => Unary(Not, e1p)}     //search
+      case Binary(bop, v1, v2) => (bop, v1, v2) match{
+        case (Plus,N(n1), N(n2)) => doreturn((N(n1 + n2)))                              //do
+        case (Plus,S(s1), S(s2)) => doreturn((S(s1 + s2)))                              //do
+        case (Plus,v1, e2) if isValue(v1) => step(e2) map { v2p => Binary(bop, v1, v2p)}//search2
+        case (Minus, N(n1), N(n2)) => doreturn((N(n1 - n2)))                            //do
+        case (Minus, N(n1), e2) => step(e2) map { v2p => Binary(bop, v1, v2p)}          //search2
+        case (Times, N(n1), N(n2)) => doreturn(N(n1*n2))                                //do
+        case (Times, N(n1), e2) => step(e2) map { v2p => Binary(bop, v1, v2p)}          //search2
+        case (Div, N(n1), N(n2)) => doreturn(N(n1/n2))                                  //do
+        case (Div, N(n1), e2) => step(e2) map { v2p => Binary(bop, v1, v2p)}            //search 2
+        case (Seq, v1, v2) if isValue(v1)=> doreturn(v2)
+        case (Lt,_,_) | (Le,_,_) | (Gt,_,_) | (Ge,_,_) if isValue(v1) & isValue(v2) => doreturn( B(inequalityVal(bop, v1, v2) ) )  // do
+        case (Lt,_,_) | (Le,_,_) | (Gt,_,_) | (Ge,_,_) if isValue(v1) => step(v2) map { v2p => Binary(bop, v1, v2p)} // search 2
+        case (Eq, B(b1), B(b2)) => doreturn(B (b1 == b2)) // do
+        case (Eq, v1, e2 )if isValue(v1) => step(e2) map { v2p => Binary(bop, v1, v2p)}   // search 2
+        case (Ne, B(b1), B(b2)) => doreturn(B(b1 != b2)) // do
+        case (Ne, v1, e2) if isValue(v1) => step(e2) map { v2p => Binary(bop, v1, v2p)} // search 2
+        case (And, B(true), v2) => doreturn(v2)  // do and true
+        case (And, B(false), _) => doreturn(B(false)) // do and false
+        case (Or, B(true), _) => doreturn(B(true)) // do or true
+        case (Or, B(false), v2) => doreturn(v2) // do or false
+        case (bop, e1, e2) => step(e1) map { e1p => Binary(bop, e1p, e2)} // search 1
       }
+      //      case Binary(bop, e1, e2) => step(e1) map { e1p => Binary(bop, e1p, e2)}
+      case If(B(b1), e1, e2) => if (b1 == true) doreturn(e1) else doreturn(e2) // do if
+      case If( e1, e2, e3) if !isValue(e1) => step( e1) map { e1p => If(e1p, e2, e3)} //search if
 
-      case Decl(MConst, x, v1, e2) if isValue(v1) =>
-        doreturn(substitute(e2, v1, x))
-      case Decl(MVar, x, v1, e2) if isValue(v1) => {
-        getBinding(MVar, v1) map {e1p => substitute(e2, e1p, x)}
-
+      /***** More cases here */
+      /***** Cases needing adapting from Lab 4. */
+      case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) => memalloc(e)                                   // might not be finished
+      case Obj(fields) if !(fields forall { case (_, vi) => isValue(vi)}) => fields.find{case ((fi, ei)) => !isValue(ei)} match {       // search
+        case Some((fx, ex)) => step(ex) map { eip => Obj(fields + ( fx -> eip))}
+        case None => doreturn(Obj(fields))
       }
-        /***** New cases for Lab 5. */
-      case Unary(Deref, a @ A(_)) =>
-        doget map {
-          mp => mp.get(a)  match {
-            case None => throw StuckError(e)
-            case Some(s) => s
+      case GetField(a @ A(_), f) =>  //do
+        doget map { w => w.get(a) match {
+          case Some(Obj(fields)) => {
+            fields.get(f) match {
+              case Some(e) => e
+              case None => Undefined
+            }
+
           }
-        }
+          case _ => throw new StuckError(e)
+        }}
+      case GetField( e1, f) => step(e1) map { e1p => GetField( e1p, f)} // search
+      case Decl(MConst, x, v1, e2) if isValue(v1) =>        getBinding(MConst, v1) map { v1p => substitute(e2, v1p, x)}
+      case Decl(MVar, x, v1, e2) if isValue(v1) =>          getBinding(MVar, v1) map { v1p => substitute(e2, v1p, x)}
+      case Decl(mode, x, e1, e2) if isRedex(mode, e1) => step(e1) map { e1p => Decl(mode,x, e1p, e2)} // search
+
+      /***** New cases for Lab 5. */
+      case Unary(Deref, a @ A(_)) => // do
+        doget map { w => w.get(a) match {
+          case Some(e) => e
+          case None => Undefined
+        }}
+
 
       case Assign(Unary(Deref, a @ A(_)), v) if isValue(v) =>
-        domodify[Mem] { m => m.+(a->v) } map { _ => v }      //extend the state with a->v
+        domodify[Mem] { m => m + (a -> v) } map { _ => v }
 
-      case Assign(GetField(a @ A(_), f), v) if isValue(v) =>
-        // assign new field in object to be a new value
-        //a point to new field and return value v'
-        domodify[Mem] { m => m.get(a) match {
-          case Some(Obj(fields)) => m.+(a -> Obj(fields.updated(f, v)))
-          case _ => throw StuckError(e)
-          }
-        } map {_ => v}    //m.get gets value of a in the memory and returns option expression
+      case Assign(GetField(a @ A(_), f), v) if isValue(v) => ???
+      //        doget map { w => w.get(a) match {
+      //        case Some(Obj(fields)) => {
+      //          fields.get(f) match {
+      //            case Some(x) => f-> v
+      //            case None => fields + (f -> v)
+      //          }
+      //        }
+      //      }}
 
       case Call(v @ Function(p, params, _, e), args) => {
         val pazip = params zip args
-        if (???) {
-          val dwep = pazip.foldRight( ??? : DoWith[Mem,Expr] )  {
-            case (((xi, MTyp(mi, _)), ei), dwacc) => ???
+        if ( ! pazip.exists{case ((_,MTyp(mi,_)),ei) => {isRedex(mi,ei)}}){
+          val dwep = pazip.foldRight(doreturn(e) : DoWith[Mem,Expr] )  {
+            case (((xi, MTyp(mi, _)), ei), dwacc) => getBinding(mi, ei)
           }
           p match {
-            case None => ???
-            case Some(x) => ???
+            case None => dwep
+            case Some(x) => dwep map { e => substitute(e, v, x)}
           }
         }
         else {
           val dwpazipp = mapFirstWith(pazip) {
-            ???
+            case ((xi, MTyp(mi,ti)), ei) => if(isRedex(mi, ei)) Some(step(ei) map { case eip => ((xi, MTyp(mi,ti)), eip)}) else None
           }
-          ???
+          doreturn(Call(v, pazip.map{case((_,_), ei) => ei}))
         }
+      }
+      //      case Call(v@ Function(p, params, _, e), args) =>
+      case Call(e1, args) if !isValue(e1) => step(e1) map { e1p => Call(e1p, args)}
+      case Unary(Cast(t),v) if isValue(v) => (t,v) match{
+        // case (t, v) if t == v => doreturn(v)
+        case (TObj(tfields),Null) => doreturn(Null)
       }
 
       /* Base Cases: Error Rules */
-        /***** Replace the following case with a case to throw NullDeferenceError.  */
+      /***** Replace the following case with a case to throw NullDeferenceError.  */
       //case _ => throw NullDeferenceError(e)
 
       /* Inductive Cases: Search Rules */
-        /***** Cases needing adapting from Lab 3. Make sure to replace the case _ => ???. */
+      /***** Cases needing adapting from Lab 3. Make sure to replace the case _ => ???. */
       case Print(e1) => step(e1) map { e1p => Print(e1p) }
-      case Unary(uop, e1) =>
-        for (e1p <- step(e1)) yield Unary(uop, e1p)
-        /***** Cases needing adapting from Lab 4 */
-      case GetField(e1, f) =>
-        step(e1) map (e1p => GetField(e1p,f) )
-      case Obj(fields) => fields find { case (_, ei) => !isValue(ei) } match {
-        case Some((fi,ei)) => step(ei) map( vi => Obj(fields + (fi -> vi)))
-        case None => throw StuckError(e)
-      }
+      //      case Unary(uop, e1) =>
+      //      case Binary(bop, e1, e2) => step(e1) map { e1p => Binary(bop, e1p, e2)}
 
-      case Decl(mode, x, e1, e2) =>
-        ??? //check if e1 is reducable, if it is then step on e1, return new e1
-      case Call(e1, args) =>
-        step(e1) map {e1p => Call(e1p, args)}//step on e1
+      /***** Cases needing adapting from Lab 4 */
+      //      case GetField(e1, f) =>
+      //        ???
+      //      case Obj(fields) =>
+      //        ???
 
-        /***** New cases for Lab 5.  */
+      //      case Decl(mode, x, e1, e2) =>
+      //        ???
+      //      case Call(e1, args) =>
+      //        ???
+
+      /***** New cases for Lab 5.  */
       case Assign(e1, e2) if !isLValue(e1) =>
-        step(e1) map {e1p => Assign(e1p, e2)}
+        step(e1) map { e1p => Assign(e1p,e2)}
       case Assign(e1, e2) =>
-        step(e2) map {e2p => Assign(e1, e2p)}
+        step(e2) map { e2p => Assign(e1,e2p)}
 
       /* Everything else is a stuck error. */
       case _ => throw StuckError(e)
     }
   }
+
+  //set ^^^^
 
   /*** Extra Credit: Lowering: Remove Interface Declarations ***/
 
