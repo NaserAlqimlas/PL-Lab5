@@ -335,8 +335,21 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
     require(isValue(v1), s"inequalityVal: v1 ${v1} is not a value")
     require(isValue(v2), s"inequalityVal: v2 ${v2} is not a value")
     require(bop == Lt || bop == Le || bop == Gt || bop == Ge)
-    (v1, v2) match {
-      case _ => ???
+    ((v1, v2): @unchecked) match {
+      case (S(s1), S(s2)) =>
+        (bop: @unchecked) match {
+          case Lt => s1 < s2
+          case Le => s1 <= s2
+          case Gt => s1 > s2
+          case Ge => s1 >= s2
+        }
+      case (N(n1), N(n2)) =>
+        (bop: @unchecked) match {
+          case Lt => n1 < n2
+          case Le => n1 <= n2
+          case Gt => n1 > n2
+          case Ge => n1 >= n2
+        }
     }
   }
 
@@ -346,21 +359,21 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
       case N(_) | B(_) | Undefined | S(_) | Null | A(_) => e
       case Print(e1) => Print(subst(e1))
         /***** Cases from Lab 3 */
-      case Unary(uop, e1) => ???
-      case Binary(bop, e1, e2) => ???
-      case If(e1, e2, e3) => ???
-      case Var(y) => ???
+      case Unary(uop, e1) => Unary(uop, subst(e1))
+      case Binary(bop, e1, e2) => Binary(bop, subst(e1), subst(e2))
+      case If(e1, e2, e3) => If(subst(e1), subst(e2), subst(e3))
+      case Var(y) => if(x==y) esub else e
         /***** Cases need a small adaption from Lab 3 */
       case Decl(mut, y, e1, e2) => Decl(mut, y, subst(e1), if (x == y) e2 else subst(e2))
         /***** Cases needing adapting from Lab 4 */
       case Function(p, paramse, retty, e1) =>
-        ???
+        if (p == Some(x) || (paramse exists { case (y,_) => x == y })) e else Function(p, paramse, retty, subst(e1))
         /***** Cases directly from Lab 4 */
-      case Call(e1, args) => ???
-      case Obj(fields) => ???
-      case GetField(e1, f) => ???
-        /***** New case for Lab 5 */
-      case Assign(e1, e2) => ???
+      case Call(e1, args) => Call(subst(e1), args map subst)
+      case Obj(fields) => Obj(fields map { case (f,e) => (f, subst(e)) })
+      case GetField(e1, f) => GetField(subst(e1), f)
+      /***** New case for Lab 5 */
+      case Assign(e1, e2) => Assign(subst(e1), subst(e2))
 
       /* Should not match: should have been removed */
       case InterfaceDecl(_, _, _) => throw new IllegalArgumentException("Gremlins: Encountered unexpected expression %s.".format(e))
@@ -376,7 +389,11 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
   }
 
   /* Check whether or not an expression is reduced enough to be applied given a mode. */
-  def isRedex(mode: Mode, e: Expr): Boolean = ???
+  def isRedex(mode: Mode, e: Expr): Boolean =  mode match {
+    // true if reduceable and false if not reduceable
+    case MConst => !isValue(e)
+    case MName => false
+  }
 
   def getBinding(mode: Mode, e: Expr): DoWith[Mem,Expr] = {
     require(!isRedex(mode,e), s"expression ${e} must not reducible under mode ${mode}")
@@ -390,25 +407,41 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
       /* Base Cases: Do Rules */
       case Print(v1) if isValue(v1) => doget map { m => println(pretty(m, v1)); Undefined }
         /***** Cases needing adapting from Lab 3. */
-      case Unary(Neg, v1) if isValue(v1) => ???
-        /***** More cases here */
+      case Unary(Neg, v1) if isValue(v1) => ??? //doreturn(N(-v1))
+      case Unary(Not, B(b1)) => doreturn (B(!b1))
+      case Binary(bop @ (Lt|Le|Gt|Ge), v1, v2) if isValue(v1) && isValue(v2) => doreturn(B(inequalityVal(bop, v1, v2)))
+      case Binary(Seq, v1, e2) if isValue(v1) => doreturn(e2)
+      case Binary(Plus, S(s1), S(s2)) => doreturn(S(s1+s1))
+      case Binary(Plus, N(n1), N(n2)) => doreturn(N(n1+n2))
+      case Binary(Minus, N(n1), N(n2)) => doreturn(N(n1-n2))
+      case Binary(Times, N(n1), N(n2)) => doreturn(N(n1*n2))
+      case Binary(Div, N(n1), N(n2)) => doreturn(N(n1/n2))
+      case Binary(Eq, v1, v2) if isValue(v1) && isValue(v2) => doreturn(B(v1 == v2))
+      case Binary(Ne, v1, v2) if isValue(v1) && isValue(v2) => doreturn(B(v1 != v2))
+      case Binary(And, B(b1), e2) => doreturn(if (b1) e2 else B(false))
+      case Binary(Or, B(b1), e2) => doreturn(if (b1) B(true) else B(false))
+      case If(B(true), e2, e3) => doreturn(e2)
+      case If(B(false), e2, e3) => doreturn(e3)
         /***** Cases needing adapting from Lab 4. */
       case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) =>
         ???
-      case GetField(a @ A(_), f) =>
-        ???
+      case GetField(a @ A(_), f) => doget map {
+        (m: Mem) => m.get(a) match {
+          case Some(Obj(fields)) if fields.contains(f) => fields(f)
+          case _ => throw StuckError(e)
+        }
+      }
 
       case Decl(MConst, x, v1, e2) if isValue(v1) =>
-        ???
+        doreturn(substitute(e2, v1, x))
       case Decl(MVar, x, v1, e2) if isValue(v1) =>
         ???
-
         /***** New cases for Lab 5. */
       case Unary(Deref, a @ A(_)) =>
         ???
 
       case Assign(Unary(Deref, a @ A(_)), v) if isValue(v) =>
-        domodify[Mem] { m => ??? } map { _ => ??? }
+        domodify[Mem] { m => m + (a -> v) } map { _ => v }      /** Check this **/
 
       case Assign(GetField(a @ A(_), f), v) if isValue(v) =>
         ???
@@ -440,12 +473,14 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
         /***** Cases needing adapting from Lab 3. Make sure to replace the case _ => ???. */
       case Print(e1) => step(e1) map { e1p => Print(e1p) }
       case Unary(uop, e1) =>
-        ???
+        for (e1p <- step(e1)) yield Unary(uop, e1p)
         /***** Cases needing adapting from Lab 4 */
       case GetField(e1, f) =>
-        ???
-      case Obj(fields) =>
-        ???
+        step(e1) map (e1p => GetField(e1p,f) )
+      case Obj(fields) => fields find { case (_, ei) => !isValue(ei) } match {
+        case Some((fi,ei)) => step(ei) map( vi => Obj(fields + (fi -> vi)))
+        case None => throw StuckError(e)
+      }
 
       case Decl(mode, x, e1, e2) =>
         ???
