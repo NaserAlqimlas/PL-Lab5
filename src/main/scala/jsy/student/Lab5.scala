@@ -317,8 +317,7 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
   ///set
 
 
-  //////Nasar//////
-
+  //////Naser//////
 
   /*** Small-Step Interpreter ***/
 
@@ -382,10 +381,10 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
     def myrename(e: Expr): Expr = {
       val fvs = freeVars(esub)
       def fresh(x: String): String = if (fvs contains x) fresh(x + "$") else x
-      rename[Unit](e)(???){ x => ??? }
+      rename[Unit](e)(doreturn(null)){ x => doreturn(fresh(x)) }
     }
 
-    subst(???)
+    subst(myrename(e))
   }
 
   /* Check whether or not an expression is reduced enough to be applied given a mode. */
@@ -397,7 +396,12 @@ object Lab5 extends jsy.util.JsyApplication with Lab5Like {
 
   def getBinding(mode: Mode, e: Expr): DoWith[Mem,Expr] = {
     require(!isRedex(mode,e), s"expression ${e} must not reducible under mode ${mode}")
-    ???
+     mode match {
+       case MConst | MName => doreturn(e)
+       case MRef => ???
+       case MVar => ???
+     }         //based on mode, do something const or name -> var or ptr ref, Mconst or Mname,
+                // creates the binding, Var-> alloc mem then doreturn, Mref -> expr given is location val, Mconst or Mname doesn't really matter
   }
 
   /* A small-step transition. */
